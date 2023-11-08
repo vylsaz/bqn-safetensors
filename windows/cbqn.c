@@ -1,4 +1,3 @@
-#define BQN_EXP __attribute__((__visibility__("default"))) __declspec(dllexport)
 #include"bqnffi.h"
 
 #include<windows.h>

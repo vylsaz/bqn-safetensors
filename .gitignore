@@ -1,0 +1,8 @@
+/target
+/Cargo.lock
+*.a
+*.o
+*.safetensors
+/other
+/.vscode
+.cbqn_repl_history

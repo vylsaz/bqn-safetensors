@@ -1,33 +1,47 @@
-lib ← "./target/release/"∾"bqn_safetensors"{
+lib ← •args∾"bqn_safetensors"{
     𝕨𝕊"windows": 𝕨∾".dll"; 
     "lib"∾𝕨∾".so"
 }•platform.os
 
 ("'"∾lib∾"' not found") ! •file.Exists lib
 
-SaveFile ⇐ {
-    f ← lib •FFI "a"‿"serialize"‿"a"‿"a"
-    x ← ⥊𝕩
-    b ← 0=•internal.ElType¨x
-    x "Ai8"⊸•internal.Variation¨⌾(b/⊢) ↩
-    ⟨k,r⟩ ← F⟨𝕨,x⟩
-    {k≡0? !r ; r}
+ffi ← {
+    serialize ⇐ lib •FFI "a"‿"serialize"‿"a"‿"a"‿"a"
+    getNames ⇐ lib •FFI "a"‿"get_names"‿"a"
+    getTensor ⇐ lib •FFI "a"‿"get_tensor"‿"a"‿"a"
 }
 
-OpenFile ⇐ {𝕊file:
-    f ← lib •FFI "a"‿"get_names"‿"a"
-    ⟨k,r⟩ ← F⟨file⟩
-    {k≡0? 
-        !r 
-    ;
-        f ← lib •FFI "a"‿"get_tensor"‿"a"‿"a"
+SaveFile ⇐ {𝕨𝕊x:
+    k‿v ← {
+    0: <˘⍉x ;
+    6: ⟨x.Keys @, x.Values @⟩ ;
+        !"Wrong type for argument 𝕩"
+    }•Type x
+    k •ToUTF8¨↩
+    b ← 0=•internal.ElType¨v
+    v "Ai8"⊸•internal.Variation¨⌾(b⊸/) ↩
+    ⟨ok,r⟩ ← ffi.Serialize ⟨•ToUTF8 𝕨,k,v⟩
+    {ok≡0? !r ; r}
+}
+
+LoadFile ⇐ {𝕊file:
+    file (•ToUTF8 •file.RealPath)↩
+    ⟨ok,r⟩ ← ffi.GetNames ⟨file⟩
+    {ok≡0? !r ;
         {
-            file ⇐ file
-            keys ⇐ r
-            Get ⇐ {
-                ⟨k,r⟩ ← F⟨file,𝕩⟩
-                {k≡0? !r ; r}
+            dict ← r •HashMap @¨r
+            file ← file
+            Get ⇐ {𝕊k:
+                v ← dict.Get k
+                {v≢@? v ;
+                    ⟨ok,r⟩ ← ffi.GetTensor⟨file,•ToUTF8 k⟩
+                    {ok≡0? !r ; r⊣k dict.Set r}
+                }
             }
+            Has ⇐ dict.Has
+            Keys ⇐ dict.Keys
+            Values ⇐ Get¨Keys
+            Count ⇐ dict.Count
         }
     }
 }

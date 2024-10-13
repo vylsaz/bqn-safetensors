@@ -1,4 +1,4 @@
-lib ← •args∾"bqn_safetensors"{
+lib ← •args •file.At "bqn_safetensors"{
     𝕨𝕊"windows": 𝕨∾".dll"; 
     "lib"∾𝕨∾".so"
 }•platform.os
